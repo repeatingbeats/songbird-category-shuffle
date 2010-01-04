@@ -274,7 +274,6 @@ sbICategoryShuffleManager.prototype = {
         // being, enforce trackNumber order for Album Shuffle and let other
         // categories sort according to their medialist order
         var doSort = (category == SBProperties.albumName);
-        var secondarySort = SBProperties.trackNumber
               
         var sequence = []; 
         var listener = {
@@ -292,6 +291,7 @@ sbICategoryShuffleManager.prototype = {
         }
         view.mediaList.enumerateItemsByProperty(category, value, listener);
         if (doSort) {
+          // need to make this generic for secondar sort property
           sequence.sort( function(a,b) {
             var trackA = view.getItemByIndex(a);
             var trackB = view.getItemByIndex(b);
