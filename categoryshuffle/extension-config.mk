@@ -1,0 +1,5 @@
+EXTENSION_NAME = categoryshuffle
+EXTENSION_DIR = .
+EXTENSION_UUID = $(EXTENSION_NAME)@repeatingbeats.com
+EXTENSION_VER = 0.1.0
+EXTENSION_ARCH = 

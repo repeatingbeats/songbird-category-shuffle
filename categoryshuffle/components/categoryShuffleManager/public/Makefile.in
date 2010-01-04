@@ -1,0 +1,18 @@
+
+DEPTH = ../../../../..
+topsrcdir = @top_srcdir@
+srcdir = @srcdir@
+VPATH = @srcdir@
+
+include $(DEPTH)/build/autodefs.mk
+
+IS_EXTENSION = 1
+
+# compile IDL
+XPIDL_SRCS = sbICategoryShuffleManager.idl \
+             $(NULL)
+
+# xpt target
+XPIDL_MODULE = sbCategoryShuffleManager.xpt
+
+include $(topsrcdir)/build/rules.mk

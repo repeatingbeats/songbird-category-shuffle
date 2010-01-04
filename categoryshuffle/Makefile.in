@@ -1,0 +1,23 @@
+# categoryshuffle/Makefile.in
+
+DEPTH     = ../..
+topsrcdir = @top_srcdir@
+srcdir    = @srcdir@
+VPATH     = @srcdir@
+  
+include $(DEPTH)/build/autodefs.mk
+
+SUBDIRS = chrome \
+          components \
+          defaults \
+          $(NULL)
+
+IS_EXTENSION = 1
+
+EXTENSION_STAGE_DIR = ./.xpistage
+
+CREATEDIRS = $(SONGBIRD_PREFERENCESDIR) \
+             $(SONGBIRD_COMPONENTSDIR) \
+             $(NULL)
+
+include $(topsrcdir)/build/rules.mk

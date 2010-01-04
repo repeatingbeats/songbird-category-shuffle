@@ -1,0 +1,14 @@
+DEPTH     = ../../..
+topsrcdir = @top_srcdir@
+srcdir    = @srcdir@
+VPATH     = @srcdir@
+  
+include $(DEPTH)/build/autodefs.mk
+
+IS_EXTENSION = 1
+
+JAR_MANIFEST = jar.mn.in
+
+JAR_TARGET_DIR = $(EXTENSION_STAGE_DIR)/chrome
+
+include $(topsrcdir)/build/rules.mk

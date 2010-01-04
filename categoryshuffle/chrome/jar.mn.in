@@ -1,0 +1,11 @@
+# create jar file
+categoryshuffle.jar:
+% content categoryshuffle %content/
+% locale categoryshuffle en-US %locale/en-US/
+% skin categoryshuffle classic/1.0 %skin/
+# overlays
+% overlay chrome://songbird/content/xul/layoutBaseOverlay.xul chrome://categoryshuffle/content/categoryshuffle-scripts.xul
+% overlay chrome://songbird/content/xul/layoutBaseOverlay.xul chrome://categoryshuffle/content/categoryshuffle-menu.xul
+% overlay chrome://songbird/content/xul/layoutBaseOverlay.xul chrome://categoryshuffle/content/categoryshuffle-commands.xul
+# include all file in this jar
+@include_all_to

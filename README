@@ -1,0 +1,4 @@
+Enables shuffling by metadata category in Songbird.
+
+For example, Album Shuffle will pick a random album, play
+every song in order, and then move on to the next random album.
