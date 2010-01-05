@@ -107,7 +107,6 @@ sbICategoryShuffleManager.prototype = {
             self._handleStreamEnd();
             break;
           case Ci.sbIMediacoreEvent.VIEW_CHANGE:
-            self._addViewListener(e.data);
             break;
         }
       }
@@ -159,7 +158,6 @@ sbICategoryShuffleManager.prototype = {
     if (!view) {
       view = LibraryUtils.createStandardMediaListView(LibraryUtils.mainLibrary);
     }
-    this._addViewListener(view);
     // get the possible values for this category's property and generate
     // a random sequence
     var categoryEnumerator = view.getDistinctValuesForProperty(category);
@@ -186,8 +184,9 @@ sbICategoryShuffleManager.prototype = {
     var value = this._categorySequence[category].splice(0,1)[0];
     var sequenceGenerator = this._getSequenceGenerator(category,value);
     var sequencer = this._gMM.sequencer;
-    // trigger a regenerate even if we are already in MODE_CUSTOM
-    sequencer.mode = sequencer.MODE_FORWARD;
+    // trigger a regenerate even if we are already in MODE_CUSTOM (no! setting
+    // it triggers the generation)
+    //sequencer.mode = sequencer.MODE_FORWARD;
     sequencer.customGenerator = sequenceGenerator;
     sequencer.mode = sequencer.MODE_CUSTOM;
     this._shuffling = true;
@@ -214,93 +213,83 @@ sbICategoryShuffleManager.prototype = {
     }
   },
 
-  _addViewListener : function(view) {
-    var self = this;
-    var listener = {
-      onFilterChanged : function(changedView) {
-        self._onViewChanged(changedView);
-      },
-      onSearchChanged : function(changedView) {
-        self._onViewChanged(changedView);
-      },
-      onSortChanged : function(changedView) {
-        // don't care about sort
-      }
-    }
-    // remove the previous listener
-    var oldListener = this._currentViewListener;
-    if (oldListener) {
-      oldListener.view.removeListener(oldListener.listener);
-    }
-    view.addListener(listener,false);
-    this._currentViewListener = { listener : listener,
-                                  view : view
-                                };
-  },
-
-  _onViewChanged : function(view) {
-
-    if (!this._shuffling) {
-      return;
-    }
-    // blow up the category sequence
-    this._categorySequence[this.category] = [];
-    var nextItem = this._gMM.sequencer.nextItem;
-    var index = -1;
-    if (nextItem) {
-      try {
-        index = view.getIndexForItem(nextItem);
-      } catch(err) {
-        // do nothing
-      }
-    }
-    
-    if (index == -1) {
-      // the next item in our custom sequence is not in the current view
-      // reload our sequence
-      this._loadSequence();
-    }
-  },
-
   _getSequenceGenerator : function(category,value) {
     var self = this;
     var generator = {
-      onGenerateSequence : function(view, aSequenceLength) {
+    
+      _shuffleValue : null,
 
+      onGenerateSequence : function(view, aSequenceLength) {
+  
+        if (!this._shuffleValue) {
+          this._shuffleValue = value;
+        }
+  
+        dump("recalculating sequence for\n\tcategory: " + category +
+             "\n\tvalue: " + this._shuffleValue + "\n");       
+ 
         // generate a sequence of items in the view the property/value combo
         // where the category is the property. Eventually there should be
         // a feature where users can choose a 'secondary sort' that controls
         // how tracks are ordered (including a random option). For the time
         // being, enforce trackNumber order for Album Shuffle and let other
         // categories sort according to their medialist order
-        var doSort = (category == SBProperties.albumName);
-              
-        var sequence = []; 
-        var listener = {
-          onEnumerationBegin : function(list) {},
-          onEnumeratedItem : function(list,item) {
-            try {
-              var index = view.getIndexForItem(item);
-              sequence.push(index);
-            } catch (err) {
-              // no problem ... will catch NS_ERROR_NOT_AVAILABLE when the item
-              // is not in the index
-            }
-          },
-          onEnumerationEnd : function(list,code) {}
+
+        var generate = function(aValue) {
+          dump("generating a sequence for value " + aValue + "\n");
+          var sequence = [];
+          var doSort = (category == SBProperties.albumName);
+      
+          var listener = {
+            onEnumerationBegin : function(list) {},
+            onEnumeratedItem : function(list,item) {
+              try {
+                var index = view.getIndexForItem(item);
+                sequence.push(index);
+              } catch (err) {
+                // no problem ... will catch NS_ERROR_NOT_AVAILABLE when the item
+                // is not in the index
+              }
+            },
+            onEnumerationEnd : function(list,code) {}
+          }
+          view.mediaList.enumerateItemsByProperty(category, aValue, listener);
+          if (doSort) {
+            // need to make this generic for secondar sort property
+            sequence.sort( function(a,b) {
+              var trackA = view.getItemByIndex(a);
+              var trackB = view.getItemByIndex(b);
+              return parseInt(trackA.getProperty(SBProperties.trackNumber)) -
+                     parseInt(trackB.getProperty(SBProperties.trackNumber));
+            });
+          }
+          return sequence;
         }
-        view.mediaList.enumerateItemsByProperty(category, value, listener);
-        if (doSort) {
-          // need to make this generic for secondar sort property
-          sequence.sort( function(a,b) {
-            var trackA = view.getItemByIndex(a);
-            var trackB = view.getItemByIndex(b);
-            return parseInt(trackA.getProperty(SBProperties.trackNumber)) -
-                   parseInt(trackB.getProperty(SBProperties.trackNumber));
-          });
+        // first try with the existing category/value  
+        var sequence = generate(this._shuffleValue);
+        dump("first attemp, found a sequence of length " + sequence.length + "\n");
+        if (sequence.length == 0) {
+          dump("creating new category sequence\n");
+          // no values in this view, so generate a new random category sequence
+          var categoryEnumerator = view.getDistinctValuesForProperty(category);
+          var values = [];
+          while (categoryEnumerator.hasMore()) {
+            values.push(categoryEnumerator.getNext());
+          }
+          self._categorySequence[category] =
+            self._generateRandomSequence(values);
+          dump("changing shuffle value from " + this._shuffleValue + "\n");
+          this._shuffleValue = self._categorySequence[category].splice(0,1)[0];
+          dump("changing shuffle value to " + this._shuffleValue + "\n");
+          sequence = generate(this._shuffleValue);
         }
-        
+
         aSequenceLength.value = sequence.length;
+        dump("RETURNING SEQUENCE --------\n");
+        for (var i in sequence) {
+          dump("index: " + sequence[i] + ", track: " +
+               view.getItemByIndex(sequence[i]).getProperty(SBProperties.trackName) + "\n");
+        }
         return sequence;
       }
     }

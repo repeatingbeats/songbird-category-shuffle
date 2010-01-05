@@ -78,7 +78,13 @@ CategoryShuffle.Controller = {
     
     var aCount = {};
     this.categories = this.mgr.getAllCategories(aCount);
-
+    dump("this.categories.length: " + this.categories.length + "\n");
+    for (var i in this.categories) {
+      dump("i: " + i + ", this.categories[i]: " + this.categories[i] + "\n");
+    }
+    for (var i=0; i<this.categories.length; i++) {
+      dump("i: " + i + ", this.categories[i]: " + this.categories[i] + "\n");
+    }
     for (var i in this.categories) {
 
       var category = this.categories[i];
