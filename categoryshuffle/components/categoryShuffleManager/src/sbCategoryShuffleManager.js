@@ -90,9 +90,11 @@ sbICategoryShuffleManager.prototype = {
       onMediacoreEvent : function(e) {
         switch (e.type) {
           case Ci.sbIMediacoreEvent.BEFORE_TRACK_CHANGE:
+            //dump("BEFORE_TRACK_CHANGE: " + e.data + "\n");
             self._handleBeforeTrackChange();
             break;
           case Ci.sbIMediacoreEvent.TRACK_CHANGE:
+            //dump("TRACK_CHANGE: " + e.data + "\n");
             self._handleTrackChange();
             break;
           case Ci.sbIMediacoreEvent.STREAM_STOP:
@@ -100,6 +102,12 @@ sbICategoryShuffleManager.prototype = {
             break;
           case Ci.sbIMediacoreEvent.STREAM_END:
             self._handleStreamEnd();
+            break;
+          case Ci.sbIMediacoreEvent.TRACK_INDEX_CHANGE:
+            //dump("TRACK_INDEX_CHANGE: " + e.data + "\n");
+            break;
+          case Ci.sbIMediacoreEvent.SEQUENCE_CHANGE:
+            //dump("SEQUENCE_CHANGE: " + e.data + "\n");
             break;
         }
       }
@@ -317,7 +325,8 @@ sbICategoryShuffleManager.prototype = {
           this._shuffleValue = self._categorySequence[category].splice(0,1)[0];
           sequence = generate(this._shuffleValue);
         }
-
+        //dump("completed sequence generation for value: " + this._shuffleValue +
+        //     "\n");
         aSequenceLength.value = sequence.length;
         return sequence;
       }
