@@ -90,23 +90,16 @@ sbICategoryShuffleManager.prototype = {
       onMediacoreEvent : function(e) {
         switch (e.type) {
           case Ci.sbIMediacoreEvent.BEFORE_TRACK_CHANGE:
-            // when returning from normal shuffle, the sequencer
-            // starts at position one instead of zero.  
-            if (self._sequenceLoaded) {
-              var sequencer = self._gMM.sequencer;
-              while (sequencer.sequencePosition != 0) {
-                sequencer.previous();
-              }
-              self._sequenceLoaded = false;
-            }
+            self._handleBeforeTrackChange();
+            break;
+          case Ci.sbIMediacoreEvent.TRACK_CHANGE:
+            self._handleTrackChange();
             break;
           case Ci.sbIMediacoreEvent.STREAM_STOP:
             self._handleStreamStop();
             break;
           case Ci.sbIMediacoreEvent.STREAM_END:
             self._handleStreamEnd();
-            break;
-          case Ci.sbIMediacoreEvent.VIEW_CHANGE:
             break;
         }
       }
@@ -115,6 +108,7 @@ sbICategoryShuffleManager.prototype = {
     this.initialized = true;
   },
 
+  // set the metadata category we are shuffling by
   setCategory : function(aCategory) {
     var index = this._CATEGORIES.indexOf(aCategory);
     if (index != -1 || aCategory == "") {
@@ -122,11 +116,13 @@ sbICategoryShuffleManager.prototype = {
     }
   },
 
+  // return the list of categories that are available
   getAllCategories : function(aCount) {
     aCount.value = this._CATEGORIES.length;
     return this._CATEGORIES;
   },
 
+  // turn off category shuffle
   turnOff : function() {
     var sequencer = this._gMM.sequencer;
      if (sequencer.mode == sequencer.MODE_CUSTOM) {
@@ -137,11 +133,13 @@ sbICategoryShuffleManager.prototype = {
      this._shuffling = false;
   },
 
+  // restore category shuffle
   restore : function() {
-    var sequencer = this._gMM.sequencer;
-    sequencer.mode = sequencer.MODE_FORWARD;
+    this._loadSequence();
   },
   
+  // generate a random sequence of values in the current category and load the
+  // tracks with the first value
   generateSequence : function() {
     // grab the current mediaListView. if we can't get one, create one from the
     // main library. this can introduce a bug where we create a sequence of 
@@ -169,12 +167,20 @@ sbICategoryShuffleManager.prototype = {
     this._loadSequence();
   },
 
+  // play category shuffle
   playSequence : function() {
     this._loadSequence();
     this._gMM.sequencer.play();
   },
 
+  // from the sequence of category values (Album 1, Album 2, Album 3, etc), grab
+  // all tracks that match the first value and load them into the sequencer
   _loadSequence : function() {
+
+    if (this._sequenceLoaded) {
+      return;
+    }
+    this._sequenceLoaded = true;
     var category = this.category;
     if (!this._categorySequence[category] ||
          this._categorySequence[category].length == 0) {
@@ -184,13 +190,9 @@ sbICategoryShuffleManager.prototype = {
     var value = this._categorySequence[category].splice(0,1)[0];
     var sequenceGenerator = this._getSequenceGenerator(category,value);
     var sequencer = this._gMM.sequencer;
-    // trigger a regenerate even if we are already in MODE_CUSTOM (no! setting
-    // it triggers the generation)
-    //sequencer.mode = sequencer.MODE_FORWARD;
     sequencer.customGenerator = sequenceGenerator;
     sequencer.mode = sequencer.MODE_CUSTOM;
     this._shuffling = true;
-    this._sequenceLoaded = true;
   },
 
   _handleStreamStop : function() {
@@ -213,8 +215,48 @@ sbICategoryShuffleManager.prototype = {
     }
   },
 
+  _handleBeforeTrackChange : function() {
+
+    // ignore track changes when don't have a loaded sequence
+    if (!this._sequenceLoaded) {
+      return;
+    }
+    
+    var sequencer = this._gMM.sequencer;
+    var position = sequencer.sequencePosition;
+    var sequenceLength = sequencer.currentSequence.length;
+  
+    // if all items in the view are in the same category, we need
+    // to prevent the last track from repeating
+    if (this._shuffling && sequenceLength !=1 &&
+        (position == (sequenceLength-1))) {
+      sequencer.abort();
+      this._sequenceLoaded = false;
+      return;
+    }
+
+    // the sequencer likes to start at position one instead of position
+    // zero in some cases, but we need to start at position zero for
+    // things like Album Shuffle to work right
+    if (position == 1) {
+      // correct the problem on the TRACK_CHANGE handler
+      this._queuePrevious = true;
+    }
+    this._sequenceLoaded = false;
+  },
+
+  _handleTrackChange : function() {
+    // ignore everything unless the BEFORE_TRACK_CHANGE queued a previous call
+    if (this._queuePrevious) {
+      this._gMM.sequencer.previous();
+      this._queuePrevious = false;
+    }
+  },
+
   _getSequenceGenerator : function(category,value) {
     var self = this;
+
+    // implementation of sbIMediacoreSequenceGenerator
     var generator = {
     
       _shuffleValue : null,
@@ -225,9 +267,6 @@ sbICategoryShuffleManager.prototype = {
           this._shuffleValue = value;
         }
   
-        dump("recalculating sequence for\n\tcategory: " + category +
-             "\n\tvalue: " + this._shuffleValue + "\n");       
- 
         // generate a sequence of items in the view the property/value combo
         // where the category is the property. Eventually there should be
         // a feature where users can choose a 'secondary sort' that controls
@@ -236,7 +275,6 @@ sbICategoryShuffleManager.prototype = {
         // categories sort according to their medialist order
 
         var generate = function(aValue) {
-          dump("generating a sequence for value " + aValue + "\n");
           var sequence = [];
           var doSort = (category == SBProperties.albumName);
       
@@ -267,9 +305,7 @@ sbICategoryShuffleManager.prototype = {
         }
         // first try with the existing category/value  
         var sequence = generate(this._shuffleValue);
-        dump("first attemp, found a sequence of length " + sequence.length + "\n");
         if (sequence.length == 0) {
-          dump("creating new category sequence\n");
           // no values in this view, so generate a new random category sequence
           var categoryEnumerator = view.getDistinctValuesForProperty(category);
           var values = [];
@@ -278,18 +314,11 @@ sbICategoryShuffleManager.prototype = {
           }
           self._categorySequence[category] =
             self._generateRandomSequence(values);
-          dump("changing shuffle value from " + this._shuffleValue + "\n");
           this._shuffleValue = self._categorySequence[category].splice(0,1)[0];
-          dump("changing shuffle value to " + this._shuffleValue + "\n");
           sequence = generate(this._shuffleValue);
         }
 
         aSequenceLength.value = sequence.length;
-        dump("RETURNING SEQUENCE --------\n");
-        for (var i in sequence) {
-          dump("index: " + sequence[i] + ", track: " +
-               view.getItemByIndex(sequence[i]).getProperty(SBProperties.trackName) + "\n");
-        }
         return sequence;
       }
     }

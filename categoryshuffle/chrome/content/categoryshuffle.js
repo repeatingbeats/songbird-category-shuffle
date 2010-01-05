@@ -78,13 +78,6 @@ CategoryShuffle.Controller = {
     
     var aCount = {};
     this.categories = this.mgr.getAllCategories(aCount);
-    dump("this.categories.length: " + this.categories.length + "\n");
-    for (var i in this.categories) {
-      dump("i: " + i + ", this.categories[i]: " + this.categories[i] + "\n");
-    }
-    for (var i=0; i<this.categories.length; i++) {
-      dump("i: " + i + ", this.categories[i]: " + this.categories[i] + "\n");
-    }
     for (var i in this.categories) {
 
       var category = this.categories[i];
@@ -100,7 +93,9 @@ CategoryShuffle.Controller = {
         var category = this.id.substring(self.ID_PREFIX.length);
         if (self.mgr.category == category) {
           if (self.shuffleDataRemote.intValue == 1) {
+            //dump("restore\n");
             self.mgr.restore();
+            
           }
           return;
         }
@@ -129,6 +124,7 @@ CategoryShuffle.Controller = {
     var shuffleObserver = {
       observe : function(subject, topic, data) {
         if (data == 0) {
+          dump("heard it from the observer too\n");
           self.restoreCategoryShuffle(false);
         } else {
           self.turnCategoryShuffleOff();
