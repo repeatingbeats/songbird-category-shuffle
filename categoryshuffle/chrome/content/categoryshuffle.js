@@ -78,7 +78,8 @@ CategoryShuffle.Controller = {
     
     var aCount = {};
     this.categories = this.mgr.getAllCategories(aCount);
-    for (var i in this.categories) {
+    
+    for (var i=0; i<this.categories.length; i++) {
 
       var category = this.categories[i];
       var displayName = propMgr.getPropertyInfo(category).displayName;
@@ -93,8 +94,7 @@ CategoryShuffle.Controller = {
         var category = this.id.substring(self.ID_PREFIX.length);
         if (self.mgr.category == category) {
           if (self.shuffleDataRemote.intValue == 1) {
-            //dump("restore\n");
-            self.mgr.restore();
+            self.mgr.enable();
             
           }
           return;
@@ -114,7 +114,7 @@ CategoryShuffle.Controller = {
     offCommand.addEventListener("command", function() {
       Application.prefs.setValue("extensions.categoryshuffle.category", "");
       self.turnCategoryShuffleOff();
-      self.mgr.turnOff();
+      self.mgr.disable();
     }, false);
 
     this.offMenuitem =
@@ -124,7 +124,6 @@ CategoryShuffle.Controller = {
     var shuffleObserver = {
       observe : function(subject, topic, data) {
         if (data == 0) {
-          dump("heard it from the observer too\n");
           self.restoreCategoryShuffle(false);
         } else {
           self.turnCategoryShuffleOff();
@@ -132,14 +131,13 @@ CategoryShuffle.Controller = {
       }
     }
     this.shuffleDataRemote = Cc["@songbirdnest.com/Songbird/DataRemote;1"]
-                       .createInstance(Ci.sbIDataRemote);
+                               .createInstance(Ci.sbIDataRemote);
     this.shuffleDataRemote.init("playlist.shuffle");
     this.shuffleDataRemote.bindObserver(shuffleObserver, true);
   
     // set category shuffle menu on startup according to normal shuffle state
     // and previously set values
-    var shuffleState = this.shuffleDataRemote.intValue;
-    if (shuffleState == 0) {
+    if (this.shuffleDataRemote.intValue == 0) {
       this.restoreCategoryShuffle(onPlayerSwitch);
     } else {
       this.turnCategoryShuffleOff();
@@ -151,10 +149,23 @@ CategoryShuffle.Controller = {
     randomPlayCommand.addEventListener("command", function() {
       self.mgr.playSequence();
     }, false);
+
+    // listen for play events
+    window.document.addEventListener("Play", function (e) {
+      self.onPlay(e);
+    }, false);
   },
 
   onUnLoad: function() {
     this.shuffleDataRemote.unbind();
+    window.document.removeEventListener(
+      "Play", CategoryShuffle.Controller.onPlay, false);
+  },
+
+  onPlay : function(e) {
+    if (e.type == "Play") {
+      this.mgr.handlePlayEvent();
+    }
   },
 
   // turn off category shuffle
@@ -194,3 +205,4 @@ window.addEventListener('load', function(e) {
     CategoryShuffle.Controller.onLoad(e); }, false);
 window.addEventListener('unload',function(e) {
     CategoryShuffle.Controller.onUnLoad(e); }, false);
+
