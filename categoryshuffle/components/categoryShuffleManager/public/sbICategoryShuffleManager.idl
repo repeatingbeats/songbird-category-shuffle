@@ -40,12 +40,13 @@ interface sbICategoryShuffleManager : nsISupports
   readonly attribute AString category;
 
   void initialize();
-  void turnOff();
-  void restore();
+  void disable();
+  void enable();
   void setCategory(in AString aCategory);
   void getAllCategories(out unsigned long aCount,
                         [retval, array, size_is(aCount)] out wstring aCategories);
   void generateSequence();
   void playSequence();
+  void handlePlayEvent();
 
 };
