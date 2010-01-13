@@ -11,13 +11,10 @@
     <!-- extensions are type 2 -->
     <em:type>2</em:type>
     <em:name>Category Shuffle</em:name>
-    <em:version>0.1.0</em:version>
+    <em:version>0.1.1</em:version>
     <em:creator>repeatingbeats</em:creator>
-    <em:description>Shuffle by metadata categories</em:description>
+    <em:description>Shuffle by metadata categories (album shuffle, artist shuffle, etc.)</em:description>
     <em:homepageURL>http://www.repeatingbeats.com</em:homepageURL>
-    <em:aboutURL>chrome://categoryshuffle/content/about.xul</em:aboutURL> 
-     <!-- extension architecture (OS/CPU) filled in during build -->
-    <em:targetPlatform>@EXTENSION_ARCH@</em:targetPlatform>   
     <!-- target application is Songbird -->
     <em:targetApplication>
       <Description>
