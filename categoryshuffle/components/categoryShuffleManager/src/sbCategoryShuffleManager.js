@@ -310,8 +310,17 @@ sbICategoryShuffleManager.prototype = {
           aSequence.sort (function (a,b) {
             var trackA = aView.getItemByIndex(a);
             var trackB = aView.getItemByIndex(b);
-            return parseInt(trackA.getProperty(SBProperties.trackNumber)) -
-                   parseInt(trackB.getProperty(SBProperties.trackNumber));
+            // Right now we just sort by track number for album shuffle and
+            // ignore sorting for all other categories. Sort by disc then by
+            // track number for multidisc albums
+            var discA = trackA.getProperty(SBProperties.discNumber);
+            var discB = trackB.getProperty(SBProperties.discNumber);
+            if (discA != discB) {
+              return discA - discB;
+            } else {
+              return parseInt(trackA.getProperty(SBProperties.trackNumber)) -
+                     parseInt(trackB.getProperty(SBProperties.trackNumber));
+            }
           });
         }
             
