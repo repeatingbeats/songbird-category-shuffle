@@ -11,7 +11,7 @@
     <!-- extensions are type 2 -->
     <em:type>2</em:type>
     <em:name>Category Shuffle</em:name>
-    <em:version>0.1.2</em:version>
+    <em:version>0.1.3</em:version>
     <em:creator>repeatingbeats</em:creator>
     <em:description>Shuffle by metadata categories (album shuffle, artist shuffle, etc.)</em:description>
     <em:homepageURL>http://www.repeatingbeats.com</em:homepageURL>
@@ -20,7 +20,7 @@
       <Description>
         <em:id>songbird@songbirdnest.com</em:id>
         <em:minVersion>1.2.0</em:minVersion>
-        <em:maxVersion>1.8.0a</em:maxVersion>
+        <em:maxVersion>1.9.0a</em:maxVersion>
       </Description>
     </em:targetApplication> 
   </Description>

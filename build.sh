@@ -31,4 +31,4 @@ rsync -rv --exclude "*.svn" --exclude "*.swp" \
           --exclude "*.git" --exclude ".DS_Store" \
           $EXTENSION $SONGBIRD/extensions/
 $MAKE_COMMAND
-cp $SONGBIRD/compiled/extensions/$EXTENSION/*.xpi .
+cp $SONGBIRD/compiled/xpi-stage/$EXTENSION/*.xpi .
